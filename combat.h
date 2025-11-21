@@ -2,17 +2,13 @@
 #define COMBAT_H
 
 #include <iostream>
-#include <memory>
 #include <random>
+#include <memory>
 #include "Character.h"
 
 /**
  * Conducts one round of combat between attacker and defender.
- * - Attacker rolls for attack; if fails, round ends.
- * - If attack succeeds, defender rolls for defence:
- *   - On successful defence, applies race-specific effect via defender->specialDefence(damage).
- *   - On failed defence, defender loses (attack - defence) HP.
- * - Returns true if defender defeated.
+ * Uses modified stats (including item bonuses) as per PDF requirements.
  */
 inline bool singleAttack(std::shared_ptr<Character> attacker, std::shared_ptr<Character> defender)
 {
@@ -21,19 +17,28 @@ inline bool singleAttack(std::shared_ptr<Character> attacker, std::shared_ptr<Ch
     static std::uniform_real_distribution<> dist(0.0, 1.0);
 
     double attackRoll = dist(rng);
+    
+    // Get modified attack/defence stats (includes item bonuses)
+    int attackValue = attacker->getAttack();
+    int defenceValue = defender->getDefence();
+    
     std::cout << attacker->getRace() << " attempts an attack (chance "
-              << attacker->getAttackChance() << "): ";
+              << attacker->getAttackChance() << ", Attack: " << attackValue << "): ";
+    
     if (attackRoll > attacker->getAttackChance()) {
         std::cout << "Attack failed!\n";
         return false;
     }
+
     std::cout << "Attack succeeded!\n";
-
-    int damage = std::max(0, attacker->getAttack() - defender->getDefence());
-
+    
+    // Calculate damage using modified stats
+    int damage = std::max(0, attackValue - defenceValue);
+    
     double defenceRoll = dist(rng);
     std::cout << defender->getRace() << " attempts to defend (chance "
-              << defender->getDefenceChance() << "): ";
+              << defender->getDefenceChance() << ", Defence: " << defenceValue << "): ";
+    
     if (defenceRoll < defender->getDefenceChance()) {
         std::cout << "Defence succeeded! Applying race-specific effect.\n";
         int reducedDamage = defender->specialDefence(damage);
@@ -51,9 +56,8 @@ inline bool singleAttack(std::shared_ptr<Character> attacker, std::shared_ptr<Ch
 }
 
 /**
- * Player attacks NPC/enemy. If the enemy survives, it counter-attacks the player.
- * Both attacks follow special race rules.
- * Returns true if BOTH survived, false if one was defeated.
+ * Player attacks NPC. If NPC survives, it counter-attacks.
+ * Returns true if both survived, false if one was defeated.
  */
 inline bool combatRound(std::shared_ptr<Character> player, std::shared_ptr<Character> enemy)
 {
@@ -63,7 +67,7 @@ inline bool combatRound(std::shared_ptr<Character> player, std::shared_ptr<Chara
 
     std::cout << "\n--- NPC counter-attacks Player ---\n";
     bool playerDefeated = singleAttack(enemy, player);
-    return !playerDefeated; // return true if both are alive, false if player died
+    return !playerDefeated;
 }
 
-#endif // COMBAT_H
+#endif

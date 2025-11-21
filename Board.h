@@ -1,49 +1,40 @@
-/**
- * @file Board.h
- * @brief Header file for the Board and Square classes.
- */
-
 #ifndef BOARD_H
 #define BOARD_H
 
 #include <vector>
 #include <memory>
 #include <iostream>
+#include "Character.h"
 
-/**
- * @class Square
- * @brief Represents a single square on the board.
- */
 class Square
 {
 private:
-    int x;
-    int y;
+    int x, y;
+    std::shared_ptr<Character> npc;     // enemy/NPC on this square
+    std::shared_ptr<Character> player;  // player on this square
 
 public:
-    /**
-     * @brief Constructor.
-     * @param x_ X position of the square.
-     * @param y_ Y position of the square.
-     */
-    Square(int x_, int y_) : x(x_), y(y_) {}
+    Square(int x_, int y_) : x(x_), y(y_), npc(nullptr), player(nullptr) {}
 
-    /**
-     * @brief Print info about this square.
-     */
     void printInfo() const
     {
         std::cout << "You are at square (" << x << ", " << y << ")." << std::endl;
+        if (player) std::cout << "Player here: " << player->getRace() << std::endl;
+        if (npc)    std::cout << "NPC here: " << npc->getRace() << std::endl;
     }
 
     int getX() const { return x; }
     int getY() const { return y; }
+
+    void setPlayer(std::shared_ptr<Character> p)   { player = p; }
+    std::shared_ptr<Character> getPlayer() const   { return player; }
+    void removePlayer() { player = nullptr; }
+
+    void setNpc(std::shared_ptr<Character> n)      { npc = n; }
+    std::shared_ptr<Character> getNpc() const      { return npc; }
+    void removeNpc() { npc = nullptr; }
 };
 
-/**
- * @class Board
- * @brief Manages a 2D grid of Square objects using smart pointers.
- */
 class Board
 {
 private:
@@ -52,31 +43,17 @@ private:
     std::vector<std::vector<std::shared_ptr<Square>>> grid;
 
 public:
-    /**
-     * @brief Constructor initializes board of given width and height.
-     * @param width_ Number of columns.
-     * @param height_ Number of rows.
-     */
     Board(int width_, int height_) : width(width_), height(height_)
     {
-        // Pseudo-code:
-        // For each row from 0 to height-1:
-        //   For each col from 0 to width-1:
-        //     Create new Square using std::make_shared and add to grid
         grid.resize(height);
-        for (int y = 0; y < height; ++y)
-        {
+        for (int y = 0; y < height; ++y) {
             grid[y].resize(width);
-            for (int x = 0; x < width; ++x)
-            {
+            for (int x = 0; x < width; ++x) {
                 grid[y][x] = std::make_shared<Square>(x, y);
             }
         }
     }
 
-    /**
-     * @brief Returns pointer to square at (x, y) or nullptr if out of bounds.
-     */
     std::shared_ptr<Square> getSquare(int x, int y) const
     {
         if (x < 0 || x >= width || y < 0 || y >= height)
